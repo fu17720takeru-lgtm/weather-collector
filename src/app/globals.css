@@ -1,0 +1,10 @@
+/* Tailwind CSS のベーススタイルを読み込む */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* カスタムスタイル（Tailwindで表現しにくいものだけ） */
+:root {
+  /* テーブルの縞々模様をCSSカスタムプロパティで定義 */
+  --table-stripe: rgba(59, 130, 246, 0.03);
+}
