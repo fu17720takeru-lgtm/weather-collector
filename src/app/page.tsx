@@ -1,35 +1,10 @@
 "use client";
-/**
- * page.tsx - メインページ（天気データ一覧画面）
- *
- * "use client" とは？
- * - Next.js App Router では、デフォルトでコンポーネントはサーバーサイドで実行される
- * - useState や useEffect などの React フックを使う場合は "use client" が必要
- * - クライアント（ブラウザ）で実行されるコンポーネントであることを宣言する
- *
- * このページの役割：
- * - /api/weather を呼び出して保存済みの天気データを取得・表示する
- * - 「手動取得」ボタンで /api/collect を呼び出してデータを収集・保存する
- * - ローディング・エラー・データなし の各状態を適切に表示する
- */
 
 import { useState, useEffect, useCallback } from "react";
 import { WeatherRecord, WeatherApiResponse, CollectApiResponse } from "@/types/weather";
 
-// ==============================
-// 型定義（このファイル内で使う）
-// ==============================
-
 type Status = "idle" | "loading" | "success" | "error";
 
-// ==============================
-// ユーティリティ関数
-// ==============================
-
-/**
- * ISO 8601 の日時文字列を日本語の読みやすい形式に変換する
- * 例: "2025-05-20T14:00:00.000Z" → "2025/05/20 23:00"
- */
 function formatDateTime(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleString("ja-JP", {
@@ -42,20 +17,11 @@ function formatDateTime(isoString: string): string {
   });
 }
 
-/**
- * 数値を小数点1桁でフォーマットする
- * null の場合は "---" を返す
- */
 function formatNumber(value: number | null, unit: string): string {
   if (value === null) return "---";
   return `${value.toFixed(1)} ${unit}`;
 }
 
-// ==============================
-// サブコンポーネント
-// ==============================
-
-/** ローディングスピナー */
 function LoadingSpinner() {
   return (
     <div className="flex items-center justify-center py-12">
@@ -65,7 +31,6 @@ function LoadingSpinner() {
   );
 }
 
-/** エラー表示 */
 function ErrorMessage({ message }: { message: string }) {
   return (
     <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
@@ -80,7 +45,6 @@ function ErrorMessage({ message }: { message: string }) {
   );
 }
 
-/** データなし表示 */
 function EmptyState() {
   return (
     <div className="text-center py-16 text-gray-500">
@@ -93,7 +57,6 @@ function EmptyState() {
   );
 }
 
-/** 成功メッセージ（トースト風） */
 function SuccessMessage({ message }: { message: string }) {
   return (
     <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700">
@@ -105,31 +68,14 @@ function SuccessMessage({ message }: { message: string }) {
   );
 }
 
-// ==============================
-// メインコンポーネント
-// ==============================
-
 export default function HomePage() {
-  // ---- State 定義 ----
-  /** 表示する天気レコードの一覧 */
   const [records, setRecords] = useState<WeatherRecord[]>([]);
-  /** データ取得中の状態管理 */
   const [fetchStatus, setFetchStatus] = useState<Status>("idle");
-  /** データ収集中の状態管理 */
   const [collectStatus, setCollectStatus] = useState<Status>("idle");
-  /** エラーメッセージ */
   const [errorMessage, setErrorMessage] = useState<string>("");
-  /** 成功メッセージ（収集完了後に表示） */
   const [successMessage, setSuccessMessage] = useState<string>("");
-  /** 最終更新日時 */
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // ---- データ取得関数 ----
-
-  /**
-   * /api/weather を呼び出して保存済みデータを取得する
-   * useCallback でメモ化することで、不要な再生成を防ぐ
-   */
   const fetchRecords = useCallback(async () => {
     setFetchStatus("loading");
     setErrorMessage("");
@@ -151,10 +97,6 @@ export default function HomePage() {
     }
   }, []);
 
-  /**
-   * /api/collect を呼び出して天気データを収集・保存する
-   * 完了後に fetchRecords() を呼んでテーブルを更新する
-   */
   const handleCollect = async () => {
     setCollectStatus("loading");
     setSuccessMessage("");
@@ -171,10 +113,8 @@ export default function HomePage() {
       setCollectStatus("success");
       setSuccessMessage(json.message || "データを取得・保存しました");
 
-      // 収集完了後、テーブルを最新状態に更新
       await fetchRecords();
 
-      // 5秒後に成功メッセージを消す
       setTimeout(() => setSuccessMessage(""), 5000);
     } catch (err) {
       setCollectStatus("error");
@@ -184,21 +124,15 @@ export default function HomePage() {
     }
   };
 
-  // ---- 初回ロード時にデータを取得 ----
   useEffect(() => {
     fetchRecords();
   }, [fetchRecords]);
 
-  // ---- ボタンの無効化判定 ----
   const isCollecting = collectStatus === "loading";
   const isFetching = fetchStatus === "loading";
 
-  // ==============================
-  // JSX（画面レイアウト）
-  // ==============================
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ヘッダー */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-5">
           <div className="flex items-center gap-3">
@@ -215,13 +149,9 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* メインコンテンツ */}
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-
-        {/* コントロールパネル */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* 最終更新情報 */}
             <div>
               <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                 データ管理
@@ -236,9 +166,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* ボタン群 */}
             <div className="flex gap-3 flex-wrap">
-              {/* 手動取得ボタン */}
               <button
                 onClick={handleCollect}
                 disabled={isCollecting || isFetching}
@@ -264,7 +192,6 @@ export default function HomePage() {
                 )}
               </button>
 
-              {/* データ更新ボタン */}
               <button
                 onClick={fetchRecords}
                 disabled={isFetching || isCollecting}
@@ -293,13 +220,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 成功メッセージ */}
         {successMessage && <SuccessMessage message={successMessage} />}
-
-        {/* エラーメッセージ */}
         {errorMessage && <ErrorMessage message={errorMessage} />}
 
-        {/* 天気データテーブル */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="text-base font-semibold text-gray-800">
@@ -310,15 +233,12 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* ローディング中 */}
           {isFetching && records.length === 0 && <LoadingSpinner />}
 
-          {/* データなし */}
           {!isFetching && records.length === 0 && fetchStatus !== "error" && (
             <EmptyState />
           )}
 
-          {/* データあり: テーブル表示 */}
           {records.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -350,19 +270,14 @@ export default function HomePage() {
                         ${index % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
                       `}
                     >
-                      {/* 観測日時 */}
                       <td className="px-4 py-3 text-gray-700 whitespace-nowrap font-mono text-xs">
                         {formatDateTime(record.observed_at)}
                       </td>
-
-                      {/* 地域 */}
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {record.area}
                         </span>
                       </td>
-
-                      {/* 気温 */}
                       <td className="px-4 py-3 text-right font-mono">
                         <span
                           className={`font-semibold ${
@@ -376,13 +291,9 @@ export default function HomePage() {
                           {formatNumber(record.temperature, "℃")}
                         </span>
                       </td>
-
-                      {/* 風速 */}
                       <td className="px-4 py-3 text-right font-mono text-gray-700">
                         {formatNumber(record.wind_speed, "m/s")}
                       </td>
-
-                      {/* 降水量（雨の場合は青色表示） */}
                       <td className="px-4 py-3 text-right font-mono">
                         <span
                           className={
@@ -402,7 +313,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* フッター */}
         <footer className="text-center text-xs text-gray-400 py-4">
           <p>
             天気データは{" "}
